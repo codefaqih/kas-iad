@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KAS-IAD · IAD Daerah Seruyan</title>
+<link rel="icon" href="img/logo-iad.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main id="login" class="login">
+  <aside class="brand">
+    <img src="img/logo-iad.png" alt="Logo Ikatan Adhyaksa Dharmakarini">
+    <h1>KAS-IAD</h1>
+    <p>Sistem kas dan keuangan<br>Ikatan Adhyaksa Dharmakarini<br>Daerah Seruyan</p>
+  </aside>
+  <form id="fLogin" class="lf">
+    <img class="lf-logo" src="img/logo-iad.png" alt="">
+    <h2>Masuk Bendahara</h2>
+    <p class="sub">Masuk untuk mengelola kas dan laporan keuangan.</p>
+    <label>Username<input name="username" autocomplete="username" required></label>
+    <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+    <button class="btn wide">Masuk</button>
+  </form>
+</main>
+
+<div id="app" hidden>
+  <aside class="side">
+    <div class="logo"><img src="img/logo-iad.png" alt="Logo IAD"><div><b>KAS-IAD</b><small>IAD Daerah Seruyan</small></div></div>
+    <nav id="nav">
+      <p class="grp">Keuangan</p>
+      <button data-v="dashboard">Dashboard</button>
+      <button data-v="transaksi">Transaksi</button>
+      <button data-v="arisan">Arisan</button>
+      <p class="grp">Kelola</p>
+      <button data-v="anggota">Anggota</button>
+      <button data-v="pengaturan">Pengaturan</button>
+      <p class="grp">Laporan</p>
+      <button data-v="laporan">Cetak Laporan</button>
+    </nav>
+    <div class="user"><span class="av">B</span><div><b>Bendahara</b><small>IAD Daerah Seruyan</small></div></div>
+    <button id="logout" class="lo">Keluar</button>
+  </aside>
+  <main class="main"><section id="view"></section></main>
+</div>
+<div id="toast" role="status"></div>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
