@@ -100,11 +100,15 @@ async function vTrx() {
   <dialog id="dlg"><form id="fTrx" class="form"><h3>Tambah transaksi</h3>
     <div class="seg"><label><input type="radio" name="tipe" value="masuk" checked> Pemasukan</label><label><input type="radio" name="tipe" value="keluar"> Pengeluaran</label></div>
     <label>Tanggal<input type="date" name="tanggal" value="${today()}" required></label>
-    <label data-m>Kategori<select name="kategori"><option value="arisan">Arisan</option><option value="jimpitan">Jimpitan</option><option value="wajib">Iuran wajib</option><option value="lainnya">Lainnya</option></select></label>
+    <label data-m>Kategori<select name="kategori"><option value="semua">Bayar semua (arisan + jimpitan + iuran wajib)</option><option value="arisan">Arisan</option><option value="jimpitan">Jimpitan</option><option value="wajib">Iuran wajib</option><option value="lainnya">Lainnya</option></select></label>
     <label data-k hidden>Kategori pengeluaran<input name="kategoriK" maxlength="60" placeholder="mis. Konsumsi, Santunan"></label>
     <label data-m>Anggota<select name="anggotaId"><option value="">— pilih —</option>${st.anggota.map(a => `<option value="${esc(a.id)}">${esc(a.nama)}</option>`).join('')}</select></label>
     <label data-m>Periode<input type="month" name="periode" value="${today().slice(0, 7)}"></label>
-    <label>Jumlah (Rp)<input type="number" name="jumlah" min="1" required></label>
+    <label data-s hidden>Arisan (Rp)<input type="number" name="pa" min="0"></label>
+    <label data-s hidden>Jimpitan (Rp)<input type="number" name="pj" min="0"></label>
+    <label data-s hidden>Iuran wajib (Rp)<input type="number" name="pw" min="0"></label>
+    <label data-s hidden>Total diterima<input name="total" readonly></label>
+    <label data-n>Jumlah (Rp)<input type="number" name="jumlah" min="1" required></label>
     <label>Keterangan<input name="keterangan" maxlength="300"></label>
     <label data-k hidden>Bukti pengeluaran (JPG/PNG/PDF, maks. 5 MB)<input type="file" name="file" accept="image/jpeg,image/png,application/pdf"></label>
     <div class="acts"><button type="button" class="ghost2" id="cancel">Batal</button><button class="btn">Simpan</button></div>
@@ -124,24 +128,31 @@ async function vTrx() {
   if ($('#add')) $('#add').onclick = () => $('#dlg').showModal();
   $('#cancel').onclick = () => $('#dlg').close();
   const f = $('#fTrx');
+  const total = () => { f.total.value = rp((+f.pa.value || 0) + (+f.pj.value || 0) + (+f.pw.value || 0)); };
   const auto = () => {
     if (f.tipe.value !== 'masuk') return;
     const k = f.kategori.value, m = st.anggota.find(a => a.id === f.anggotaId.value);
+    if (k === 'semua') { f.pa.value = st.tarif.arisan; f.pj.value = st.tarif.jimpitan; f.pw.value = m ? st.tarif.wajib[m.golongan] : 0; total(); return; }
     const v = k === 'arisan' ? st.tarif.arisan : k === 'jimpitan' ? st.tarif.jimpitan : k === 'wajib' && m ? st.tarif.wajib[m.golongan] : '';
     if (v) f.jumlah.value = v;
   };
   const sync = () => {
-    const keluar = f.tipe.value === 'keluar';
+    const keluar = f.tipe.value === 'keluar', semua = !keluar && f.kategori.value === 'semua';
     f.querySelectorAll('[data-m]').forEach(e => e.hidden = keluar);
     f.querySelectorAll('[data-k]').forEach(e => e.hidden = !keluar);
+    f.querySelectorAll('[data-s]').forEach(e => e.hidden = !semua);
+    f.querySelectorAll('[data-n]').forEach(e => e.hidden = semua);
+    f.jumlah.required = !semua;
     auto();
   };
-  f.onchange = e => (e.target.name === 'tipe' ? sync() : auto());
+  f.onchange = e => { const n = e.target.name; if (n === 'tipe' || n === 'kategori') sync(); else if (n === 'anggotaId') auto(); };
+  f.oninput = e => { if (['pa', 'pj', 'pw'].includes(e.target.name)) total(); };
+  sync();
   f.onsubmit = e => {
     e.preventDefault();
     run(f.querySelector('.btn'), async () => {
       const keluar = f.tipe.value === 'keluar', d = {
-        tipe: f.tipe.value, tanggal: f.tanggal.value, jumlah: f.jumlah.value, keterangan: f.keterangan.value,
+        tipe: f.tipe.value, tanggal: f.tanggal.value, jumlah: f.jumlah.value, arisan: f.pa.value, jimpitan: f.pj.value, wajib: f.pw.value, keterangan: f.keterangan.value,
         kategori: keluar ? f.kategoriK.value : f.kategori.value, anggotaId: f.anggotaId.value, periode: f.periode.value
       };
       if (keluar) {
@@ -155,7 +166,7 @@ async function vTrx() {
   };
   $('#lst').onclick = e => {
     const id = e.target.dataset.del;
-    if (id && confirm('Hapus transaksi ini?')) run(e.target, async () => { await api('deleteTransaksi', { id }); toast('Transaksi dihapus'); vTrx(); });
+    if (id && confirm(id.includes('-') ? 'Hapus pembayaran ini beserta seluruh rinciannya (arisan, jimpitan, iuran wajib)?' : 'Hapus transaksi ini?')) run(e.target, async () => { await api('deleteTransaksi', { id }); toast('Transaksi dihapus'); vTrx(); });
   };
 }
 
